@@ -30,6 +30,9 @@ def package_name
 String gitCommitHash
 String gitCommitAuthor
 String gitCommitMessage
+String jenkinsStoreCred = "{jenkinsStoreCred}"
+String jenkinsStoreCredUsernameLabel = "USERNAME"
+String jenkinsStoreCredPasswordLabel = "PASSWORD"
 def common
 
 pipeline {
