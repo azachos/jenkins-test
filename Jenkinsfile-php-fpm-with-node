@@ -30,6 +30,7 @@ def package_name
 String gitCommitHash
 String gitCommitAuthor
 String gitCommitMessage
+def common
 
 pipeline {
     agent { label 'jenkins-4'}
@@ -72,7 +73,7 @@ pipeline {
                         ]]
                     ])
                     script {
-                        def common = load 'common/jenkins_common/common_pipeline_functions.groovy'
+                        common = load 'common_pipeline_functions.groovy'
                     }
                 }
             }
