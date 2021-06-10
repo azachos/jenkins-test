@@ -68,7 +68,9 @@ pipeline {
                         branch: 'master',
                         credentialsId: "${GLOBAL_GITHUB_CREDENTIALS_ID}"
                     )
-                    def common = load 'common_pipeline_functions.groovy'
+                    script {
+                        def common = load 'common_pipeline_functions.groovy'
+                    }
                 }
             }
         }
