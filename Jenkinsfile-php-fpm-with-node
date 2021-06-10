@@ -81,15 +81,19 @@ pipeline {
         //   branch: version = <latest tag>-<branch name>
         stage ('Getter information') {
             steps {
-                common.getInfoNpmWithInfo()
+                script {
+                    common.getInfoNpmWithInfo()
+                }
             }
         }
 
         stage ('Set Variables and Creds') {
             steps {
-                common.setVarsAndCreds(jenkinsStoreCred, jenkinsStoreCredUsernameLabel, jenkinsStoreCredPasswordLabel)
-                // IF you want to use date
-                date_now = new Date().format("yyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
+                script {
+                    common.setVarsAndCreds(jenkinsStoreCred, jenkinsStoreCredUsernameLabel, jenkinsStoreCredPasswordLabel)
+                    // IF you want to use date
+                    date_now = new Date().format("yyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
+                }
             }
         }
 
@@ -202,7 +206,9 @@ pipeline {
 
         stage ('Build deb package') {
             steps {
-                common.buildDebPackage()
+                script {
+                    common.buildDebPackage()
+                }
             }
         }
 
@@ -211,7 +217,9 @@ pipeline {
                 buildingTag()
             }
             steps {
-                common.publishDebPackage()
+                script {
+                    common.publishDebPackage()
+                }
             }
         }
 
