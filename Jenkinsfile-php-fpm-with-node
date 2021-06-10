@@ -86,7 +86,7 @@ pipeline {
         stage ('Getter information') {
             steps {
                 script {
-                    common.getInfoNpmWithInfo()
+                    common.getInfoNpmWithInfo(NAME)
                 }
             }
         }
