@@ -62,12 +62,18 @@ pipeline {
 
         stage("Load Common Library") {
             steps {
-                git (
-                    url: 'git@github.com:azachos/jenkins-common.git',
-                    credentialsId: "jenkins-ssh"
-                )
-                script {
-                    def common = load 'jenkins_common/common_pipeline_functions.groovy'
+                dir('common') {
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: 'main' ]],
+                        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0, reference: '']],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/azachos/jenkins-common.git',
+                            credentialsId: 'jenkins-test-azachos'
+                        ]]
+                    ])
+                    script {
+                        def common = load 'common/jenkins_common/common_pipeline_functions.groovy'
+                    }
                 }
             }
         }
