@@ -1,0 +1,28 @@
+@import "assets/roboto";
+@import "assets/pt-serif";
+
+@import "~lib-juniper/styles/juniper";
+@import "~lib-juniper/styles/toasts";
+@import "~lib-juniper/styles/inspect";
+@import "~lib-juniper/styles/tooltip";
+@import "~lib-juniper/styles/responsive";
+
+html,
+body {
+  height: 100%;
+
+  margin: 0;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+
+  &.modal-open {
+    height: 100vh;
+    overflow-y: hidden;
+  }
+}
+
+:focus {
+  outline: none;
+}

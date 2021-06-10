@@ -1,0 +1,15 @@
+<pup-platform-header [locale]="locale" [caption]="'template.label.title' | translate"></pup-platform-header>
+
+<pup-content>
+
+  <pup-paragraph>{{ 'template.label.description' | translate }}</pup-paragraph>
+
+  <pup-dropdown-select icon="solid/ic-globe" [label]="'juniper.language.' + locale | translate">
+
+    <pup-dropdown-menu-item (select)="locale = language" *ngFor="let language of languages">
+      <span>{{ 'juniper.language.' + language | translate }}</span>
+    </pup-dropdown-menu-item>
+
+  </pup-dropdown-select>
+
+</pup-content>

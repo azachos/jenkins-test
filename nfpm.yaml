@@ -1,0 +1,12 @@
+name: "app-template"
+arch: "all"
+platform: "linux"
+version: "${version}"
+section: "utils"
+priority: extra
+maintainer: "Platform Team <platform-team@productsup.com>"
+description: "app-template"
+vendor: "Productsup"
+homepage: "https://github.com/productsupcom/app-template"
+files:
+  ./dist/**/*: "/home/app-template.productsup.com"

@@ -1,0 +1,11 @@
+{
+  "dest": "dist/lib-template",
+  "lib": {
+    "entryFile": "lib/public-api.ts"
+  },
+  "allowedNonPeerDependencies": [
+    "cpx",
+    "ng-packagr",
+    "@angular-devkit/build-angular"
+  ]
+}

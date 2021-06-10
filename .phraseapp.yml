@@ -1,0 +1,12 @@
+phraseapp:
+  access_token: 4bbe8ad4cfdd3c975248e68c7346b53946a2aa489b87ef8a8faf7b84c3618927
+  project_id: c767f8d2544bda008dd4ac4136ba6e25
+  file_format: simple_json
+  push:
+    sources:
+      - file: ./lib/translations/<locale_code>.json
+  pull:
+    targets:
+      - file: ./lib/translations/<locale_code>.json
+        params:
+          tag: template

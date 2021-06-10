@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "projects": {
+    "lib": {
+      "projectType": "library",
+      "root": "",
+      "sourceRoot": "lib",
+      "prefix": "pup",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "tsConfig": "tsconfig.lib.json",
+            "project": "ng-package.json"
+          }
+        }
+      }
+    },
+    "app": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "app",
+      "sourceRoot": "app/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist",
+            "index": "app/src/index.html",
+            "main": "app/src/main.ts",
+            "polyfills": "app/src/polyfills.ts",
+            "tsConfig": "app/tsconfig.app.json",
+            "aot": true,
+            "assets": [
+              "app/src/assets",
+              {
+                "glob": "**/*",
+                "input": "./lib/assets",
+                "output": "/assets/"
+              },
+              {
+                "glob": "**/*",
+                "input": "./node_modules/lib-juniper/assets",
+                "output": "/assets/"
+              },
+              {
+                "glob": "**/*",
+                "input": "./node_modules/lib-platform-header/assets",
+                "output": "/assets/"
+              }
+            ],
+            "styles": [
+              "app/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "app:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "app:build:production"
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "lib"
+}
