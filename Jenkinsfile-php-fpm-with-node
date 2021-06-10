@@ -64,7 +64,7 @@ pipeline {
             steps {
                 dir('common') {
                     git (
-                        url: 'https://github.com/alzachos/jenkins-common',
+                        url: 'https://github.com/azachos/jenkins-common',
                         branch: 'master',
                         credentialsId: "${GLOBAL_GITHUB_CREDENTIALS_ID}"
                     )
