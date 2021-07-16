@@ -45,7 +45,7 @@ pipeline {
         //   tags:   version = <tag>
         //   PR:     version = <latest tag>.<PR number>
         //   branch: version = <latest tag>-<branch name>
-        stage ('Getter information') {
+        stage ('Getter informations') {
             steps {
                 script {
                     sh 'printenv | sort'
