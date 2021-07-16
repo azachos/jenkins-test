@@ -74,7 +74,7 @@ pipeline {
             }
         }
 
-        stage ('Set Env - Prod') {
+        stage ('Set Env - Prods') {
             when {
                 buildingTag()
             }

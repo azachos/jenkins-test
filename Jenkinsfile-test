@@ -1,0 +1,246 @@
+// Pipeline template for building php fpm projects with node 
+// 
+// dependencies:
+// This pipeline depends on the following files and folders:
+// - ./nfpm.yaml
+// 
+// Usage:
+// 1. Update all the following var definitions
+// 2. Add/Remove stages as fit. all the stages in this pipeline are generalized
+//    so only the var definitions are needed to be updated by default
+// Working Pipeline
+// https://github.com/productsupcom/backend-1/blob/master/Jenkinsfile
+// https://github.com/productsupcom/backend-1/blob/master/nfpm.yaml
+
+def SLACK_CHANNEL = "#{notification-channel}"
+def SLACK_USER    = "Jenkins Deployment"
+def SLACK_ICON    = ":jenkins_ci:"
+def NAME          = "{project-name}"
+def php_version   = "7.2"
+def build_number
+def date_now
+def APP_ENV
+def host
+def target_path
+def branch_location
+def version
+def branch
+def comment
+def package_name
+String gitCommitHash
+String gitCommitAuthor
+String gitCommitMessage
+def common
+
+pipeline {
+    agent { label 'jenkins-4'}
+    options {
+        buildDiscarder(
+            logRotator(
+                numToKeepStr: '5',
+                artifactNumToKeepStr: '5'
+            )
+        )
+        timestamps()
+        timeout(time: 1, unit: 'HOURS')
+        disableConcurrentBuilds()
+        skipDefaultCheckout()
+    }
+
+    stages {
+        // Checkout code with tags. The regular scm call does a flat checkout
+        // and we need the tags to set the version
+        stage("Checkout") {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: env.BRANCH_NAME]],
+                    extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0, reference: '']],
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                ])
+            }
+        }
+
+        stage("Load Common Library") {
+            steps {
+                dir('common') {
+                    git (
+                        url: 'https://github.com/alzachos/jenkins-common',
+                        branch: 'master',
+                        credentialsId: "${GLOBAL_GITHUB_CREDENTIALS_ID}"
+                    )
+                    common = load 'common_pipeline_functions.groovy'
+                }
+            }
+        }
+
+        // set version with the following scheme
+        //   tags:   version = <tag>
+        //   PR:     version = <latest tag>.<PR number>
+        //   branch: version = <latest tag>-<branch name>
+        stage ('Getter information') {
+            steps {
+                common.getInfoNpmWithInfo()
+            }
+        }
+
+        stage ('Set Variables and Creds') {
+            steps {
+                common.setVarsAndCreds(jenkinsStoreCred, jenkinsStoreCredUsernameLabel, jenkinsStoreCredPasswordLabel)
+                // IF you want to use date
+                date_now = new Date().format("yyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
+            }
+        }
+
+        stage ('Set Env - Prod') {
+            when {
+                buildingTag()
+            }
+            steps {
+                script {
+                    APP_ENV = 'prod'
+                    target_path = '{prod-destination-folder}'
+                    sh "echo APP_ENV=prod >> .env.local"
+                }
+            }
+        }
+
+        stage ('Set Env - Dev') {
+            when { 
+                allOf {
+                    not { buildingTag() }
+                    expression { branch != 'develop' }
+                    expression { branch != 'feature/php8' }
+                } 
+            }
+            steps {
+                script {
+                    APP_ENV = 'dev'
+                    host = ['dev-1-example.productsup.com', 'dev-2-example.productsup.com']
+                    target_path = "{dev-location}/${branch_location}"
+
+                    if (!fileExists('{check-file-if-exists}')) {
+                        // TO DO WHEN FILE EXISTS
+                    }
+                }
+            }
+        }
+
+        stage ('Set Env - Staging') {
+            when { 
+                allOf {
+                    not { buildingTag() }
+                    expression { branch == 'develop' }
+                } 
+            }
+            steps {
+                script {
+                    APP_ENV = 'stage'
+                    host = ['staging-1-example.productsup.com', 'staging-2-example.productsup.com']
+                    target_path = "{staging-location}" // ex: /home/staging-platform.productsup.com
+                }
+            }
+        }
+
+        // if building with php8
+        stage ('Set Env - Dev php8') {
+            when { 
+                anyOf { 
+                    expression { branch == 'feature/php8' }
+                } 
+            }
+            steps {
+                script {
+                    APP_ENV = 'stage'
+                    php_version = "8.0"
+                    host = ['staging-1-example.productsup.com', 'staging-2-example.productsup.com']
+                    target_path = "{staging-location}" // ex: /home/staging-platform.productsup.com
+                }
+            }
+        }
+
+        stage ('Build project - composer') {
+            steps {
+                script {
+                    docker.withRegistry('https://docker.productsup.com', 'docker-registry') {
+                        docker.image("docker.productsup.com/development/php-cli-${php_version}:latest").inside('--privileged -v /etc/productsup/config.ini:/etc/productsup/config.ini') {
+                            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'repo-packagist-com',usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                                sh "composer config --auth http-basic.repo.packagist.com $USERNAME $PASSWORD"
+                                sh "composer install -v --no-scripts && composer run translate-all && composer dump-autoload -a"
+                                
+                                if (APP_ENV == 'prod') {
+                                    // TO DO WHEN production
+                                } else {
+                                    // TO DO WHEN not production
+                                }
+                                sh "rm -rf var/cache && mkdir -p var/cache"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage ('Build Code - npm') {
+            steps {
+                script {
+                    docker.image('node').inside {
+                        sh 'npm install -g n'
+                        sh 'n 10.16.0'
+                        sh 'curl -fSL -o /usr/local/bin/phraseapp https://github.com/phrase/phraseapp-client/releases/download/1.16.1/phraseapp_linux_amd64'
+                        sh 'chmod +x /usr/local/bin/phraseapp'
+                        withNPM(npmrcConfig:'npmrc') {
+                            sh 'ls -la'
+                            sh 'npm ci --verbose'
+                            sh 'rm -rf .gitignore .gitmodules .git node_modules'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage ('Build deb package') {
+            steps {
+                common.buildDebPackage()
+            }
+        }
+
+        stage ('Publish deb package') {
+            when {
+                buildingTag()
+            }
+            steps {
+                common.publishDebPackage()
+            }
+        }
+
+        // Deploy package to target hosts when not releasing a tag
+        stage ('Deploy') {
+            when {
+                not {
+                    buildingTag()
+                }
+            }
+            steps {
+                script {
+                    common.deploy()
+                }
+            }
+        }
+    }
+
+    post ('Cleanup') {
+        // failure sends a failure slack massege if the pipeline exit with a failed state
+        failure {
+            slackSend message: "${NAME} <${RUN_DISPLAY_URL}|failed>.", channel: "${SLACK_CHANNEL}", color: "danger"
+        }
+        // success sends a success slack massege if the pipeline exit with a success state
+        success {
+            slackSend message: "*${NAME} <${RUN_DISPLAY_URL}|success>*. \nAll checks passed for *${branch}* \nat commit *${gitCommitHash}* \nwhen *${gitCommitAuthor}* performed \n> ${gitCommitMessage}.", channel: "${SLACK_CHANNEL}", color: "good"
+        }
+        // cleanup always run last and will trigger for both success and failure states
+        cleanup {
+            cleanWs deleteDirs: true
+        }
+    }
+}
